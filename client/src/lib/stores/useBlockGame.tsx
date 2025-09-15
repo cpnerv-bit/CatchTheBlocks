@@ -29,8 +29,8 @@ const BASKET_WIDTH = 80;
 const BASKET_HEIGHT = 20;
 const BLOCK_WIDTH = 30;
 const BLOCK_HEIGHT = 30;
-const BASE_BLOCK_SPEED = 100; // pixels per second
-const BASE_SPAWN_INTERVAL = 2000; // milliseconds
+const BASE_BLOCK_SPEED = 80; // pixels per second (reduced for better start)
+const BASE_SPAWN_INTERVAL = 2500; // milliseconds (increased for gentler start)
 const HIGH_SCORE_KEY = 'blockgame-highscore';
 
 // High score utilities
@@ -56,13 +56,13 @@ function setStoredHighScore(score: number): void {
 
 const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
 
-// Block type configurations
+// Block type configurations (balanced for risk/reward)
 const BLOCK_TYPES = {
-  [BlockType.NORMAL]: { width: 30, height: 30, points: 10, color: '#4ecdc4', probability: 0.5 },
-  [BlockType.SMALL]: { width: 20, height: 20, points: 15, color: '#45b7d1', probability: 0.25 },
-  [BlockType.LARGE]: { width: 50, height: 40, points: 5, color: '#ff6b6b', probability: 0.15 },
-  [BlockType.BONUS]: { width: 25, height: 25, points: 25, color: '#feca57', probability: 0.08 },
-  [BlockType.SPEED]: { width: 35, height: 25, points: 20, color: '#ff9ff3', probability: 0.02 }
+  [BlockType.NORMAL]: { width: 30, height: 30, points: 10, color: '#4ecdc4', probability: 0.45 },
+  [BlockType.SMALL]: { width: 18, height: 18, points: 20, color: '#45b7d1', probability: 0.25 },
+  [BlockType.LARGE]: { width: 55, height: 45, points: 8, color: '#ff6b6b', probability: 0.20 },
+  [BlockType.BONUS]: { width: 25, height: 25, points: 30, color: '#feca57', probability: 0.07 },
+  [BlockType.SPEED]: { width: 32, height: 24, points: 25, color: '#ff9ff3', probability: 0.03 }
 };
 
 function getRandomBlockType(): BlockType {
@@ -215,7 +215,7 @@ export const useBlockGame = create<BlockGameState>()(
           y: -blockConfig.height,
           width: blockConfig.width,
           height: blockConfig.height,
-          speed: (BASE_BLOCK_SPEED + (state.level - 1) * 20) * speedMultiplier,
+          speed: (BASE_BLOCK_SPEED + (state.level - 1) * 12) * speedMultiplier,
           color: blockConfig.color,
           type: blockType,
           points: blockConfig.points,
@@ -285,8 +285,10 @@ export const useBlockGame = create<BlockGameState>()(
     incrementScore: (points: number = 10) => {
       set((state) => {
         const newScore = state.score + points;
-        const newLevel = Math.floor(newScore / 100) + 1;
-        const newSpawnInterval = Math.max(500, BASE_SPAWN_INTERVAL - (newLevel - 1) * 200);
+        // More gradual level progression: every 150 points instead of 100
+        const newLevel = Math.floor(newScore / 150) + 1;
+        // More gradual spawn interval decrease: -120ms per level with higher minimum
+        const newSpawnInterval = Math.max(800, BASE_SPAWN_INTERVAL - (newLevel - 1) * 120);
         
         return {
           score: newScore,
@@ -308,8 +310,8 @@ export const useBlockGame = create<BlockGameState>()(
 
     updateLevel: () => {
       set((state) => {
-        const newLevel = Math.floor(state.score / 100) + 1;
-        const newSpawnInterval = Math.max(500, BASE_SPAWN_INTERVAL - (newLevel - 1) * 200);
+        const newLevel = Math.floor(state.score / 150) + 1;
+        const newSpawnInterval = Math.max(800, BASE_SPAWN_INTERVAL - (newLevel - 1) * 120);
         
         return {
           level: newLevel,
