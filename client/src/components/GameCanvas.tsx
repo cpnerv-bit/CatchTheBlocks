@@ -7,7 +7,7 @@ const CANVAS_HEIGHT = 600;
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { blocks, basket, gamePhase } = useBlockGame();
+  const { blocks, particles, basket, gamePhase } = useBlockGame();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -90,6 +90,17 @@ export function GameCanvas() {
         }
       });
 
+      // Draw particles
+      particles.forEach((particle) => {
+        ctx.save();
+        ctx.globalAlpha = particle.alpha;
+        ctx.fillStyle = particle.color;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
       // Draw basket
       ctx.fillStyle = '#8B4513'; // Brown color for basket
       ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
@@ -113,7 +124,7 @@ export function GameCanvas() {
     ctx.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT - 10);
     ctx.stroke();
 
-  }, [blocks, basket, gamePhase]);
+  }, [blocks, particles, basket, gamePhase]);
 
   return (
     <canvas

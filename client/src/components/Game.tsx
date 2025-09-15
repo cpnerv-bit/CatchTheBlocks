@@ -16,6 +16,7 @@ export function Game() {
     updateBasket,
     addBlock,
     updateBlocks,
+    updateParticles,
     checkCollisions,
     basket,
   } = useBlockGame();
@@ -74,6 +75,9 @@ export function Game() {
 
         // Update existing blocks
         updateBlocks(deltaTime);
+        
+        // Update particles
+        updateParticles(deltaTime);
 
         // Check for collisions
         checkCollisions();
@@ -89,7 +93,7 @@ export function Game() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gamePhase, basket.x, basket.speed, updateBasket, addBlock, updateBlocks, checkCollisions, togglePause]);
+  }, [gamePhase, basket.x, basket.speed, updateBasket, addBlock, updateBlocks, updateParticles, checkCollisions, togglePause]);
 
   // Handle background music
   useEffect(() => {

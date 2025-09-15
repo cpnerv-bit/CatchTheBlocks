@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { Block, Basket, GameState, BlockType } from "../../types/game";
+import { Block, Basket, GameState, BlockType, Particle } from "../../types/game";
 
 interface BlockGameState extends GameState {
   // Actions
@@ -13,6 +13,8 @@ interface BlockGameState extends GameState {
   updateBasket: (x: number) => void;
   addBlock: () => void;
   updateBlocks: (deltaTime: number) => void;
+  updateParticles: (deltaTime: number) => void;
+  addParticles: (x: number, y: number, color: string, count?: number) => void;
   checkCollisions: () => void;
   incrementScore: (points?: number) => void;
   incrementMisses: () => void;
@@ -85,6 +87,7 @@ export const useBlockGame = create<BlockGameState>()(
     isNewHighScore: false,
     gamePhase: "ready",
     blocks: [],
+    particles: [],
     basket: {
       x: CANVAS_WIDTH / 2 - BASKET_WIDTH / 2,
       y: CANVAS_HEIGHT - 40,
@@ -116,6 +119,7 @@ export const useBlockGame = create<BlockGameState>()(
         isNewHighScore: false,
         gamePhase: "ready",
         blocks: [],
+        particles: [],
         basket: {
           x: CANVAS_WIDTH / 2 - BASKET_WIDTH / 2,
           y: CANVAS_HEIGHT - 40,
@@ -266,9 +270,12 @@ export const useBlockGame = create<BlockGameState>()(
           return true;
         });
         
-        // Process all caught blocks
+        // Process all caught blocks and create particles
         caughtBlocks.forEach((block) => {
-          setTimeout(() => get().incrementScore(block.points), 0);
+          setTimeout(() => {
+            get().incrementScore(block.points);
+            get().addParticles(block.x + block.width / 2, block.y + block.height / 2, block.color, 8);
+          }, 0);
         });
 
         return { blocks: newBlocks };
@@ -323,6 +330,52 @@ export const useBlockGame = create<BlockGameState>()(
         setStoredHighScore(state.score);
         set(() => ({ highScore: state.score }));
       }
+    },
+
+    updateParticles: (deltaTime: number) => {
+      set((state) => {
+        const updatedParticles = state.particles
+          .map((particle) => ({
+            ...particle,
+            x: particle.x + (particle.vx * deltaTime) / 1000,
+            y: particle.y + (particle.vy * deltaTime) / 1000,
+            life: particle.life - deltaTime,
+            alpha: particle.life / particle.maxLife, // Fade out over time
+          }))
+          .filter((particle) => particle.life > 0); // Remove dead particles
+
+        return { particles: updatedParticles };
+      });
+    },
+
+    addParticles: (x: number, y: number, color: string, count: number = 6) => {
+      set((state) => {
+        const newParticles: Particle[] = [];
+        const now = Date.now();
+        
+        for (let i = 0; i < count; i++) {
+          const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+          const speed = 100 + Math.random() * 150; // Random speed between 100-250
+          const life = 800 + Math.random() * 400; // Life between 800-1200ms
+          
+          newParticles.push({
+            id: `particle-${now}-${i}`,
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 50, // Slight upward bias
+            life,
+            maxLife: life,
+            size: 3 + Math.random() * 4, // Size between 3-7
+            color,
+            alpha: 1,
+          });
+        }
+
+        return {
+          particles: [...state.particles, ...newParticles],
+        };
+      });
     },
   }))
 );
