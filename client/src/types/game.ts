@@ -30,6 +30,8 @@ export interface GameState {
   score: number;
   misses: number;
   level: number;
+  highScore: number;
+  isNewHighScore: boolean;
   gamePhase: 'ready' | 'playing' | 'ended';
   blocks: Block[];
   basket: Basket;

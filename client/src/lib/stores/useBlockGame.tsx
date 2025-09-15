@@ -14,6 +14,8 @@ interface BlockGameState extends GameState {
   incrementScore: (points?: number) => void;
   incrementMisses: () => void;
   updateLevel: () => void;
+  loadHighScore: () => void;
+  saveHighScore: () => void;
 }
 
 const CANVAS_WIDTH = 800;
@@ -24,6 +26,28 @@ const BLOCK_WIDTH = 30;
 const BLOCK_HEIGHT = 30;
 const BASE_BLOCK_SPEED = 100; // pixels per second
 const BASE_SPAWN_INTERVAL = 2000; // milliseconds
+const HIGH_SCORE_KEY = 'blockgame-highscore';
+
+// High score utilities
+function getStoredHighScore(): number {
+  try {
+    const stored = localStorage.getItem(HIGH_SCORE_KEY);
+    if (!stored) return 0;
+    const n = Number.parseInt(stored, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  } catch (error) {
+    console.warn('Failed to load high score:', error);
+    return 0;
+  }
+}
+
+function setStoredHighScore(score: number): void {
+  try {
+    localStorage.setItem(HIGH_SCORE_KEY, score.toString());
+  } catch (error) {
+    console.warn('Failed to save high score:', error);
+  }
+}
 
 const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
 
@@ -54,6 +78,8 @@ export const useBlockGame = create<BlockGameState>()(
     score: 0,
     misses: 0,
     level: 1,
+    highScore: getStoredHighScore(),
+    isNewHighScore: false,
     gamePhase: "ready",
     blocks: [],
     basket: {
@@ -79,10 +105,12 @@ export const useBlockGame = create<BlockGameState>()(
     },
 
     restart: () => {
-      set(() => ({
+      set((state) => ({
         score: 0,
         misses: 0,
         level: 1,
+        highScore: state.highScore, // Keep current high score
+        isNewHighScore: false,
         gamePhase: "ready",
         blocks: [],
         basket: {
@@ -100,7 +128,20 @@ export const useBlockGame = create<BlockGameState>()(
     end: () => {
       set((state) => {
         if (state.gamePhase === "playing") {
-          return { gamePhase: "ended" };
+          const wasNewHighScore = state.score > state.highScore;
+          const newHighScore = Math.max(state.highScore, state.score);
+          
+          // Save new high score if it's higher
+          if (wasNewHighScore) {
+            setStoredHighScore(newHighScore);
+            console.log(`New high score achieved: ${newHighScore}`);
+          }
+          
+          return { 
+            gamePhase: "ended",
+            highScore: newHighScore,
+            isNewHighScore: wasNewHighScore
+          };
         }
         return {};
       });
@@ -230,6 +271,20 @@ export const useBlockGame = create<BlockGameState>()(
           spawnInterval: newSpawnInterval,
         };
       });
+    },
+
+    loadHighScore: () => {
+      set(() => ({
+        highScore: getStoredHighScore(),
+      }));
+    },
+
+    saveHighScore: () => {
+      const state = get();
+      if (state.score > state.highScore) {
+        setStoredHighScore(state.score);
+        set(() => ({ highScore: state.score }));
+      }
     },
   }))
 );

@@ -9,6 +9,8 @@ export function GameUI() {
     score,
     misses,
     level,
+    highScore,
+    isNewHighScore,
     gamePhase,
     start,
     restart,
@@ -25,6 +27,7 @@ export function GameUI() {
             <div className="flex gap-6 text-lg font-bold">
               <div>Score: {score}</div>
               <div>Level: {level}</div>
+              <div className="text-yellow-400">Best: {highScore}</div>
               <div className="text-red-400">Misses: {misses}/3</div>
             </div>
           </CardContent>
@@ -72,6 +75,10 @@ export function GameUI() {
               <div className="text-xl mb-6">
                 <p className="text-gray-600">Final Score: <span className="font-bold text-blue-600">{score}</span></p>
                 <p className="text-gray-600">Level Reached: <span className="font-bold text-green-600">{level}</span></p>
+                <p className="text-gray-600">High Score: <span className="font-bold text-yellow-600">{highScore}</span></p>
+                {isNewHighScore && (
+                  <p className="text-lg font-bold text-yellow-600 mt-2">★ New High Score! ★</p>
+                )}
               </div>
               <Button onClick={restart} size="lg" className="w-full">
                 <RotateCcw className="h-4 w-4 mr-2" />
