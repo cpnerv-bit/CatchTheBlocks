@@ -12,6 +12,7 @@ export function Game() {
   const {
     gamePhase,
     start,
+    togglePause,
     updateBasket,
     addBlock,
     updateBlocks,
@@ -31,6 +32,12 @@ export function Game() {
         start();
         event.preventDefault();
       }
+      
+      // Toggle pause on P key during gameplay
+      if (event.code === 'KeyP' && (gamePhase === 'playing' || gamePhase === 'paused')) {
+        togglePause();
+        event.preventDefault();
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -44,7 +51,7 @@ export function Game() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [gamePhase, start]);
+  }, [gamePhase, start, togglePause]);
 
   // Game loop
   useEffect(() => {
@@ -82,7 +89,7 @@ export function Game() {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [gamePhase, basket.x, basket.speed, updateBasket, addBlock, updateBlocks, checkCollisions]);
+  }, [gamePhase, basket.x, basket.speed, updateBasket, addBlock, updateBlocks, checkCollisions, togglePause]);
 
   // Handle background music
   useEffect(() => {

@@ -32,7 +32,7 @@ export interface GameState {
   level: number;
   highScore: number;
   isNewHighScore: boolean;
-  gamePhase: 'ready' | 'playing' | 'ended';
+  gamePhase: 'ready' | 'playing' | 'paused' | 'ended';
   blocks: Block[];
   basket: Basket;
   lastBlockSpawn: number;

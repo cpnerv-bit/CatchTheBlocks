@@ -7,6 +7,9 @@ interface BlockGameState extends GameState {
   start: () => void;
   restart: () => void;
   end: () => void;
+  pause: () => void;
+  resume: () => void;
+  togglePause: () => void;
   updateBasket: (x: number) => void;
   addBlock: () => void;
   updateBlocks: (deltaTime: number) => void;
@@ -127,7 +130,7 @@ export const useBlockGame = create<BlockGameState>()(
 
     end: () => {
       set((state) => {
-        if (state.gamePhase === "playing") {
+        if (state.gamePhase === "playing" || state.gamePhase === "paused") {
           const wasNewHighScore = state.score > state.highScore;
           const newHighScore = Math.max(state.highScore, state.score);
           
@@ -141,6 +144,41 @@ export const useBlockGame = create<BlockGameState>()(
             gamePhase: "ended",
             highScore: newHighScore,
             isNewHighScore: wasNewHighScore
+          };
+        }
+        return {};
+      });
+    },
+
+    pause: () => {
+      set((state) => {
+        if (state.gamePhase === "playing") {
+          return { gamePhase: "paused" };
+        }
+        return {};
+      });
+    },
+
+    resume: () => {
+      set((state) => {
+        if (state.gamePhase === "paused") {
+          return { 
+            gamePhase: "playing",
+            lastBlockSpawn: Date.now() // Reset spawn timer to prevent immediate block spawn
+          };
+        }
+        return {};
+      });
+    },
+
+    togglePause: () => {
+      set((state) => {
+        if (state.gamePhase === "playing") {
+          return { gamePhase: "paused" };
+        } else if (state.gamePhase === "paused") {
+          return { 
+            gamePhase: "playing",
+            lastBlockSpawn: Date.now() // Reset spawn timer
           };
         }
         return {};
