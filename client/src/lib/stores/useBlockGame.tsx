@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { Block, Basket, GameState } from "../../types/game";
+import { Block, Basket, GameState, BlockType } from "../../types/game";
 
 interface BlockGameState extends GameState {
   // Actions
@@ -11,7 +11,7 @@ interface BlockGameState extends GameState {
   addBlock: () => void;
   updateBlocks: (deltaTime: number) => void;
   checkCollisions: () => void;
-  incrementScore: () => void;
+  incrementScore: (points?: number) => void;
   incrementMisses: () => void;
   updateLevel: () => void;
 }
@@ -26,6 +26,28 @@ const BASE_BLOCK_SPEED = 100; // pixels per second
 const BASE_SPAWN_INTERVAL = 2000; // milliseconds
 
 const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+
+// Block type configurations
+const BLOCK_TYPES = {
+  [BlockType.NORMAL]: { width: 30, height: 30, points: 10, color: '#4ecdc4', probability: 0.5 },
+  [BlockType.SMALL]: { width: 20, height: 20, points: 15, color: '#45b7d1', probability: 0.25 },
+  [BlockType.LARGE]: { width: 50, height: 40, points: 5, color: '#ff6b6b', probability: 0.15 },
+  [BlockType.BONUS]: { width: 25, height: 25, points: 25, color: '#feca57', probability: 0.08 },
+  [BlockType.SPEED]: { width: 35, height: 25, points: 20, color: '#ff9ff3', probability: 0.02 }
+};
+
+function getRandomBlockType(): BlockType {
+  const rand = Math.random();
+  let cumulative = 0;
+  
+  for (const [type, config] of Object.entries(BLOCK_TYPES)) {
+    cumulative += config.probability;
+    if (rand <= cumulative) {
+      return type as BlockType;
+    }
+  }
+  return BlockType.NORMAL;
+}
 
 export const useBlockGame = create<BlockGameState>()(
   subscribeWithSelector((set, get) => ({
@@ -98,14 +120,22 @@ export const useBlockGame = create<BlockGameState>()(
       const state = get();
       
       if (now - state.lastBlockSpawn > state.spawnInterval) {
+        const blockType = getRandomBlockType();
+        const blockConfig = BLOCK_TYPES[blockType];
+        
+        // Calculate speed multiplier for SPEED blocks
+        const speedMultiplier = blockType === BlockType.SPEED ? 1.5 : 1;
+        
         const newBlock: Block = {
           id: `block-${now}`,
-          x: Math.random() * (CANVAS_WIDTH - BLOCK_WIDTH),
-          y: -BLOCK_HEIGHT,
-          width: BLOCK_WIDTH,
-          height: BLOCK_HEIGHT,
-          speed: BASE_BLOCK_SPEED + (state.level - 1) * 20,
-          color: colors[Math.floor(Math.random() * colors.length)],
+          x: Math.random() * (CANVAS_WIDTH - blockConfig.width),
+          y: -blockConfig.height,
+          width: blockConfig.width,
+          height: blockConfig.height,
+          speed: (BASE_BLOCK_SPEED + (state.level - 1) * 20) * speedMultiplier,
+          color: blockConfig.color,
+          type: blockType,
+          points: blockConfig.points,
         };
 
         set((state) => ({
@@ -140,7 +170,7 @@ export const useBlockGame = create<BlockGameState>()(
       set((state) => {
         const basket = state.basket;
         let newBlocks = [...state.blocks];
-        let collisionDetected = false;
+        let caughtBlocks: Block[] = [];
 
         newBlocks = newBlocks.filter((block) => {
           // AABB collision detection
@@ -151,20 +181,24 @@ export const useBlockGame = create<BlockGameState>()(
             block.y + block.height > basket.y;
 
           if (collision) {
-            collisionDetected = true;
-            setTimeout(() => get().incrementScore(), 0);
+            caughtBlocks.push(block);
             return false; // Remove the block
           }
           return true;
+        });
+        
+        // Process all caught blocks
+        caughtBlocks.forEach((block) => {
+          setTimeout(() => get().incrementScore(block.points), 0);
         });
 
         return { blocks: newBlocks };
       });
     },
 
-    incrementScore: () => {
+    incrementScore: (points: number = 10) => {
       set((state) => {
-        const newScore = state.score + 10;
+        const newScore = state.score + points;
         const newLevel = Math.floor(newScore / 100) + 1;
         const newSpawnInterval = Math.max(500, BASE_SPAWN_INTERVAL - (newLevel - 1) * 200);
         

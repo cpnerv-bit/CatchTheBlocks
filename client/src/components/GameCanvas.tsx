@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useBlockGame } from "../lib/stores/useBlockGame";
+import { BlockType } from "../types/game";
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -20,15 +21,73 @@ export function GameCanvas() {
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     if (gamePhase === 'playing' || gamePhase === 'ended') {
-      // Draw blocks
+      // Draw blocks with type-specific styling
       blocks.forEach((block) => {
         ctx.fillStyle = block.color;
         ctx.fillRect(block.x, block.y, block.width, block.height);
         
-        // Add a slight border for better visibility
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(block.x, block.y, block.width, block.height);
+        // Add type-specific visual effects
+        switch (block.type) {
+          case BlockType.NORMAL:
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(block.x, block.y, block.width, block.height);
+            break;
+            
+          case BlockType.SMALL:
+            // Double border for small blocks
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(block.x, block.y, block.width, block.height);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(block.x + 2, block.y + 2, block.width - 4, block.height - 4);
+            break;
+            
+          case BlockType.LARGE:
+            // Thick border for large blocks
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(block.x, block.y, block.width, block.height);
+            break;
+            
+          case BlockType.BONUS:
+            // Glowing effect for bonus blocks
+            ctx.shadowColor = block.color;
+            ctx.shadowBlur = 15;
+            ctx.fillRect(block.x, block.y, block.width, block.height);
+            ctx.shadowBlur = 0;
+            
+            // Star pattern
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('★', block.x + block.width/2, block.y + block.height/2 + 5);
+            break;
+            
+          case BlockType.SPEED:
+            // Motion lines for speed blocks
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(block.x, block.y, block.width, block.height);
+            
+            // Motion lines
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+              const y = block.y + 8 + i * 6;
+              ctx.beginPath();
+              ctx.moveTo(block.x + 5, y);
+              ctx.lineTo(block.x + block.width - 5, y);
+              ctx.stroke();
+            }
+            break;
+            
+          default:
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(block.x, block.y, block.width, block.height);
+        }
       });
 
       // Draw basket

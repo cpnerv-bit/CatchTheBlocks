@@ -1,3 +1,11 @@
+export enum BlockType {
+  NORMAL = 'normal',
+  SMALL = 'small',
+  LARGE = 'large',
+  BONUS = 'bonus',
+  SPEED = 'speed'
+}
+
 export interface Block {
   id: string;
   x: number;
@@ -6,6 +14,8 @@ export interface Block {
   height: number;
   speed: number;
   color: string;
+  type: BlockType;
+  points: number;
 }
 
 export interface Basket {
